@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Sensor Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+  window.SENSOR_NAMES = {{ SENSOR_NAMES|tojson }};
+</script>
+  <script src="{{ url_for('static', filename='js/db.js') }}" defer></script>
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+
+<div id="averages">🌡 -- °C &nbsp;&nbsp; 💧 -- %</div>
+<div id="stream">
+  <div id="stream-placeholder">🔄 Lade Stream...</div>
+  <video id="videoPlayer" controls autoplay muted playsinline></video>
+</div>
+<div>
+<button onclick="clearDB()">Alle Werte löschen</button>
+<button onclick="exportCSV()">CSV herunterladen</button>
+</div>
+<div id="dashboard">
+        <!-- 🔹 Sensor-Kacheln -->
+        <div class="sensor-container" id="sensors"></div>
+
+        <!-- 🔹 Charts -->
+        <div class="chart-container">
+        <div id="tempChart" class="chart"></div>
+        <div id="humChart" class="chart"></div>
+    </div>
+</div>
+
+</body>
+</html>
