@@ -158,13 +158,25 @@ async function initDashboard() {
     Plotly.newPlot('tempChart', tempTraces, {
         title: 'Temperaturen',
         xaxis: { type: 'date' },
-        yaxis: { range: [15, 35] }
+        yaxis: { range: [15, 35] },
+        shapes: [
+        // Untergrenze
+        { type: 'line', x0: 0, x1: 1, y0: 15, y1: 15, xref: 'paper', yref: 'y', line: { color: 'red', dash: 'dash' } },
+        // Obergrenze
+        { type: 'line', x0: 0, x1: 1, y0: 35, y1: 35, xref: 'paper', yref: 'y', line: { color: 'red', dash: 'dash' } }
+    ]
     });
 
     Plotly.newPlot('humChart', humTraces, {
         title: 'Luftfeuchtigkeit',
         xaxis: { type: 'date' },
-        yaxis: { range: [20, 80] }
+        yaxis: { range: [20, 80] },
+        shapes: [
+        // Untergrenze
+        { type: 'line', x0: 0, x1: 1, y0: 20, y1: 20, xref: 'paper', yref: 'y', line: { color: 'blue', dash: 'dash' } },
+        // Obergrenze
+        { type: 'line', x0: 0, x1: 1, y0: 80, y1: 80, xref: 'paper', yref: 'y', line: { color: 'blue', dash: 'dash' } }
+    ]
     });
 
     await updateData();
