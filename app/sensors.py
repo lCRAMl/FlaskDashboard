@@ -71,7 +71,7 @@ def sensor_loop():
             except Exception as e:
                 if DEBUG: print(f"[ERROR] Sensorloop {sensor_id}: {e}")
 
-        time.sleep(5)  # alle 5 Sekunden
+        time.sleep(9)  # kleiner als die updatezeit 10 im JS halten damit immer was neues da ist
 
 
 # --- Thread starten ---
