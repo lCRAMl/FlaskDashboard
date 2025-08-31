@@ -8,7 +8,6 @@ from . import database   # dein database.py nutzen
 I2C_BUS = 1
 MUX_ADDR = 0x70
 SENSOR_CHANNELS = [0, 1]   # PCA9548A Kanäle, wo Sensoren hängen
-MAX_POINTS = 100           # Max. Punkte für Live-Daten
 DEBUG = True               # False = Fehler ignorieren, True = Fehler anzeigen
 
 # --- Globale Variablen ---
