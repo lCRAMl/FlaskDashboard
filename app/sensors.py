@@ -2,7 +2,8 @@
 
 import smbus2, bme280, time, threading, os
 from datetime import datetime
-from . import database   # dein database.py nutzen
+from . import database, config  # dein database.py nutzen
+import requests
 
 # --- Einstellungen ---
 I2C_BUS = 1
@@ -66,7 +67,45 @@ def sensor_loop():
         time.sleep(60)  # kleiner als die updatezeit im JS halten damit immer was neues da ist
 
 
+
+# --- Shelly lesen ---
+def read_shelly():
+    try:
+        url = f"http://{config.SHELLY_IP}/rpc/Switch.GetStatus?id=0"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+
+        # relevante Werte
+        apower = data.get("apower", 0.0)
+        energie_total = data.get("aenergy", {}).get("total", 0.0)
+        temperatur = data.get("temperature", {}).get("tC", 0.0)
+        return apower, energie_total, temperatur
+    except Exception as e:
+        if DEBUG:
+            print(f"[ERROR] Shelly read failed: {e}")
+        return None, None, None
+
+
+# --- Endlosschleife im Thread für Shelly ---
+def shelly_loop():
+    while True:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        apower, energie_total, temperatur = read_shelly()
+        if apower is not None:
+            # Werte in DB speichern, ähnlich wie bei BME280
+            # Wir speichern hier drei Spalten: Leistung, Energie, Temperatur
+            database.store_reading(f"{config.SHELLY_ID}-apower", timestamp, apower, None)
+            database.store_reading(f"{config.SHELLY_ID}-aenergy", timestamp, energie_total, None)
+            database.store_reading(f"{config.SHELLY_ID}-temperature", timestamp, temperatur, None)
+        time.sleep(60)
+
+
+
+
 # --- Thread starten ---
 def start_loop():
     t = threading.Thread(target=sensor_loop, daemon=True)
     t.start()
+    s = threading.Thread(target=shelly_loop, daemon=True)
+    s.start()
