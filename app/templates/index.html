@@ -18,19 +18,22 @@
   <div id="stream-placeholder">🔄 Lade Stream...</div>
   <video id="videoPlayer" controls autoplay muted playsinline></video>
 </div>
-<div>
-<button onclick="clearDB()">Alle Werte löschen</button>
-<button onclick="exportCSV()">CSV herunterladen</button>
-</div>
 <div id="dashboard">
-        <!-- 🔹 Sensor-Kacheln -->
-        <div class="sensor-container" id="sensors"></div>
+  <!-- 🔹 Sensor-Kacheln -->
+  <div class="sensor-container" id="sensors"></div>
 
-        <!-- 🔹 Charts -->
-        <div class="chart-container">
-        <div id="tempChart" class="chart"></div>
-        <div id="humChart" class="chart"></div>
+    <!-- 🔹 Charts -->
+    <div class="chart-container">
+    <div id="tempChart" class="chart"></div>
+    <div id="humChart" class="chart"></div>
+
+    <!-- Buttons unten unter den Graphen -->
+    <div class="bottom-buttons">
+        <button onclick="clearDB()" title="Alle Werte löschen">🗑️</button>
+        <button onclick="exportCSV()" title="CSV herunterladen">💾</button>
     </div>
+
+  </div>
 </div>
 
 </body>

@@ -19,6 +19,12 @@ def start_hls_stream():
 
     def ffmpeg_thread():
         global ffmpeg_process
+        
+        def consume_stdout(pipe):
+            """Liess die stdout-Pipe, sonst blockiert FFmpeg."""
+            for line in pipe:
+                pass  # Hier könntest du die Zeilen auch loggen
+        
         while not stop_thread:
             cmd = [
                 "ffmpeg",
@@ -44,6 +50,10 @@ def start_hls_stream():
                     bufsize=1,
                     universal_newlines=True
                 )
+                
+                # Thread starten, um stdout zu konsumieren
+                threading.Thread(target=consume_stdout, args=(ffmpeg_process.stdout,), daemon=True).start()
+                
                 print("[INFO] HLS-Stream gestartet")
                 ffmpeg_process.wait()  # nur einmal warten
                 print("[INFO] FFmpeg beendet")
