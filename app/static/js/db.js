@@ -2,6 +2,15 @@ const video = document.getElementById('videoPlayer');
 const placeholder = document.getElementById('stream-placeholder');
 const videoSrc = '/hls/stream.m3u8';
 
+// --- Farbpalette für Sensoren ---
+const sensorColors = [
+    '#FF5733', '#007BFF', '#28A745', '#FFC300', '#C70039', '#8E44AD', '#FF8C00', '#1ABC9C'
+];
+
+function getSensorColor(idx){
+    return sensorColors[idx % sensorColors.length];
+}
+
 // --- Zentrale Zeitparser-Funktion ---
 function parseTimestamp(ts) {
     if (!ts) return Date.now();  // fallback auf "jetzt"
@@ -115,6 +124,7 @@ function updateAverages(data){
     document.getElementById('averages').innerHTML = `🌡 ${avgTemp} °C &nbsp;&nbsp; 💧 ${avgHum} %`;
 }
 
+// --- Dashboard initialisieren ---
 async function initDashboard() {
     initSensors();
 
@@ -123,26 +133,27 @@ async function initDashboard() {
 
     let tempTraces = [], humTraces = [];
 
-    for (let name in data) {
+    sensors.forEach((name, idx) => {
         let timestamps = [];
         if (data[name].timestamps && data[name].timestamps.length) {
-            //timestamps = data[name].timestamps.map(ts => ts.replace(' ', 'T'));
-            // ✅ Hier parseTimestamp statt nur replace
-            timestamps = data[name].timestamps.map(ts => parseTimestamp(ts));
+            timestamps = data[name].timestamps.map(ts => ts.replace(' ', 'T'));
         } else {
             const len = data[name].temp.length;
             const now = new Date();
-            //timestamps = data[name].temp.map((_, i) => new Date(now - (len - i) * 5000).toISOString());
-            // ✅ auch hier als Unix ms
-            timestamps = data[name].temp.map((_, i) => now - (len - i) * 5000);
+            timestamps = data[name].temp.map((_, i) => new Date(now - (len - i) * 5000).toISOString());
         }
+
+        const color = getSensorColor(idx);
 
         tempTraces.push({
             x: timestamps,
             y: data[name].temp,
             type: 'scatter',
             mode: 'lines+markers',
-            name: name
+            name: name,
+            line: { color: color, width: 2, shape: 'spline' },
+            marker: { size: 6, color: color },
+            hovertemplate: '%{x}<br>%{y} °C<extra>' + name + '</extra>'
         });
 
         humTraces.push({
@@ -150,34 +161,41 @@ async function initDashboard() {
             y: data[name].hum,
             type: 'scatter',
             mode: 'lines+markers',
-            name: name
+            name: name,
+            line: { color: color, width: 2, shape: 'spline' },
+            marker: { size: 6, color: color },
+            hovertemplate: '%{x}<br>%{y} %<extra>' + name + '</extra>'
         });
-    }
+    });
 
-    // Initial Plot
-    Plotly.newPlot('tempChart', tempTraces, {
+    const tempLayout = {
         title: 'Temperaturen',
-        xaxis: { type: 'date' },
-        yaxis: { range: [15, 35] },
+        plot_bgcolor: '#f9f9f9',
+        paper_bgcolor: '#f0f2f5',
+        xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
+        yaxis: { range: [15, 35], title: '°C', showgrid: true, gridcolor: '#e0e0e0' },
         shapes: [
-        // Untergrenze
-        { type: 'line', x0: 0, x1: 1, y0: 15, y1: 15, xref: 'paper', yref: 'y', line: { color: 'red', dash: 'dash' } },
-        // Obergrenze
-        { type: 'line', x0: 0, x1: 1, y0: 35, y1: 35, xref: 'paper', yref: 'y', line: { color: 'red', dash: 'dash' } }
-    ]
-    });
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 15, y1: 15, line: { color: 'red', dash: 'dash' } },
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 35, y1: 35, line: { color: 'red', dash: 'dash' } }
+        ],
+        hovermode: 'closest'
+    };
 
-    Plotly.newPlot('humChart', humTraces, {
+    const humLayout = {
         title: 'Luftfeuchtigkeit',
-        xaxis: { type: 'date' },
-        yaxis: { range: [20, 80] },
+        plot_bgcolor: '#f9f9f9',
+        paper_bgcolor: '#f0f2f5',
+        xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
+        yaxis: { range: [20, 80], title: '%', showgrid: true, gridcolor: '#e0e0e0' },
         shapes: [
-        // Untergrenze
-        { type: 'line', x0: 0, x1: 1, y0: 20, y1: 20, xref: 'paper', yref: 'y', line: { color: 'blue', dash: 'dash' } },
-        // Obergrenze
-        { type: 'line', x0: 0, x1: 1, y0: 80, y1: 80, xref: 'paper', yref: 'y', line: { color: 'blue', dash: 'dash' } }
-    ]
-    });
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 20, y1: 20, line: { color: 'blue', dash: 'dash' } },
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 80, y1: 80, line: { color: 'blue', dash: 'dash' } }
+        ],
+        hovermode: 'closest'
+    };
+    // Initial Plot
+    Plotly.newPlot('tempChart', tempTraces, tempLayout);
+    Plotly.newPlot('humChart', humTraces, humLayout);
 
     await updateData();
     setInterval(updateData, 5000);
@@ -185,8 +203,8 @@ async function initDashboard() {
 }
 
 // --- Live-Daten nachführen ---
-async function updateData(){
-    try{
+async function updateData() {
+    try {
         const res = await fetch('/data'); 
         const data = await res.json();
         updateAverages(data);
@@ -196,19 +214,29 @@ async function updateData(){
 
         sensors.forEach((name, idx) => {
             const v = data[name];
-            const el = sensorElements[name]; if(!el) return;
+            const el = sensorElements[name]; 
+            if (!el) return;
 
+            // Hintergrundfarbe setzen
             el.style.background = `linear-gradient(135deg, ${tempColor(v.temp)}, ${humColor(v.hum)})`;
+
+            // Werte in der Kachel aktualisieren
             document.getElementById(`${name}-temp`).innerText = `🌡 ${v.temp} °C`;
             document.getElementById(`${name}-hum`).innerText  = `💧 ${v.hum} %`;
 
+            // Puls-Animation triggern
+            el.classList.remove('pulse');    // vorherige Animation zurücksetzen
+            void el.offsetWidth;             // Trigger für Neuanlauf
+            el.classList.add('pulse');       // Animation starten
+
+            // Timestamp prüfen
             const ts = v.timestamp ? parseTimestamp(v.timestamp) : Date.now();
 
-            // Neue Daten anhängen
+            // Plotly: neue Daten anhängen
             Plotly.extendTraces('tempChart', { x:[[ts]], y:[[v.temp]] }, [idx]);
             Plotly.extendTraces('humChart', { x:[[ts]], y:[[v.hum]] }, [idx]);
 
-            // Scrollen: letzte maxPoints anzeigen
+            // Scrollen auf die letzten maxPoints
             const tempData = document.getElementById('tempChart').data[idx].x;
             const humData  = document.getElementById('humChart').data[idx].x;
 
@@ -224,7 +252,9 @@ async function updateData(){
             }
         });
 
-    } catch(e){ console.error(e); }
+    } catch(e) {
+        console.error(e);
+    }
 }
 
 

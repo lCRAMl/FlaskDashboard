@@ -14,7 +14,7 @@ body {
 
 #stream {
     width:90%;
-    max-width:800px;
+    max-width:1000px;
     margin:auto;
     position:relative;
     margin-bottom:20px;
@@ -47,7 +47,7 @@ button {
     border-radius:6px;
     cursor:pointer;
     background:#2196F3;
-    color:#fff;
+    color:#333;
     font-weight:bold;
     margin-bottom:20px;
 }
@@ -55,7 +55,7 @@ button {
 /* --- Sensor-Kacheln horizontal --- */
 #sensor-dashboard {
     width:90%;
-    max-width:800px;
+    max-width:1000px;
     margin:auto;
 }
 
@@ -69,11 +69,11 @@ button {
 }
 
 .sensor {
-    width:160px;
-    min-width:160px;
+    width:100px;
+    min-width:100px;
     padding:10px;
     border-radius:16px;
-    color:#fff;
+    color:#333;
     box-shadow:0 4px 12px rgba(0,0,0,.2);
     transition: transform 0.3s;
 }
@@ -94,7 +94,7 @@ button {
 /* --- Graphen --- */
 .chart-container {
     width:100%;
-    max-width:800px;
+    max-width:1000px;
     margin:auto;
     display: flex;
     flex-direction: column;
@@ -104,6 +104,16 @@ button {
 .chart {
     width:100%;
     height:300px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  50% { transform: scale(1.05); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+  100% { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+}
+
+.sensor.pulse {
+  animation: pulse 0.3s ease-in-out;
 }
 
 /* Optional: Platzhalter für scrollbare Graphen */
