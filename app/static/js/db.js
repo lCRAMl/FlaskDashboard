@@ -202,7 +202,7 @@ async function initDashboard() {
     Plotly.newPlot('humChart', humTraces, humLayout);
 
     await updateData();
-    setInterval(updateData, 60000);
+    setInterval(updateData, 5000);
     initVideo();
 }
 
