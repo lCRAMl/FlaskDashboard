@@ -169,27 +169,31 @@ async function initDashboard() {
     });
 
     const tempLayout = {
-        title: 'Temperaturen',
+        title: { text: 'Temperaturen', font: { size: 20 }, x: 0.5 },
+        margin: { t: 30, b: 30, l: 35, r: 5 },
+        height: 250,
         plot_bgcolor: '#f9f9f9',
         paper_bgcolor: '#f0f2f5',
         xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
-        yaxis: { range: [15, 35], title: '°C', showgrid: true, gridcolor: '#e0e0e0' },
+        yaxis: { range: [15, 30], title: '°C', showgrid: true, gridcolor: '#e0e0e0' },
         shapes: [
-            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 15, y1: 15, line: { color: 'red', dash: 'dash' } },
-            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 35, y1: 35, line: { color: 'red', dash: 'dash' } }
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 18, y1: 18, line: { color: 'red', dash: 'dash' } },
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 28, y1: 28, line: { color: 'red', dash: 'dash' } }
         ],
         hovermode: 'closest'
     };
 
     const humLayout = {
-        title: 'Luftfeuchtigkeit',
+        title: { text: 'Luftfeuchtigkeit', font: { size: 20 }, x: 0.5 },
+        margin: { t: 30, b: 30, l: 35, r: 5 },
+        height: 300,
         plot_bgcolor: '#f9f9f9',
         paper_bgcolor: '#f0f2f5',
         xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
-        yaxis: { range: [20, 80], title: '%', showgrid: true, gridcolor: '#e0e0e0' },
+        yaxis: { range: [30, 80], title: '%', showgrid: true, gridcolor: '#e0e0e0' },
         shapes: [
-            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 20, y1: 20, line: { color: 'blue', dash: 'dash' } },
-            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 80, y1: 80, line: { color: 'blue', dash: 'dash' } }
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 40, y1: 40, line: { color: 'blue', dash: 'dash' } },
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 70, y1: 70, line: { color: 'blue', dash: 'dash' } }
         ],
         hovermode: 'closest'
     };
