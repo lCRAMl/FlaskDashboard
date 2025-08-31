@@ -13,7 +13,6 @@ DEBUG = True               # False = Fehler ignorieren, True = Fehler anzeigen
 
 # --- Globale Variablen ---
 bus = smbus2.SMBus(I2C_BUS)
-live_data = {}
 sensor_map = {}  # { (channel, addr): "Sensorname" }
 
 # --- Multiplexer auswählen ---
@@ -33,9 +32,8 @@ def read_bme280(address):
 
 # --- Sensoren initialisieren ---
 def init_sensors():
-    global sensor_map, live_data
+    global sensor_map
     sensor_map.clear()
-    live_data.clear()
 
     sensor_count = 0
     for channel in SENSOR_CHANNELS:
@@ -46,7 +44,6 @@ def init_sensors():
                 sensor_count += 1
                 name = f"CH{channel}-{hex(addr)}"
                 sensor_map[(channel, addr)] = name
-                live_data[name] = []
             except Exception as e:
                 if DEBUG:
                     print(f"[WARN] Kein Sensor auf CH{channel}, {hex(addr)}")
@@ -62,10 +59,6 @@ def sensor_loop():
                 select_channel(channel)
                 temp, hum = read_bme280(addr)
                 if temp is None: continue
-
-                live_data[sensor_id].append({"time": timestamp, "temperature": temp, "humidity": hum})
-                if len(live_data[sensor_id]) > MAX_POINTS:
-                    live_data[sensor_id].pop(0)
 
                 database.store_reading(sensor_id, timestamp, temp, hum)
             except Exception as e:
