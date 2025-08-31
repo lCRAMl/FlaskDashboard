@@ -80,6 +80,7 @@ def clear_data():
     c.execute("DELETE FROM readings")
     conn.commit()
     conn.close()
+    init_db()
 
 def csvdump():
     conn = sqlite3.connect(config.DB_FILE)
