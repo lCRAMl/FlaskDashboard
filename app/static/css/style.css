@@ -60,38 +60,6 @@ body {
 .bottom-buttons button:hover {
     transform: scale(1.2);
 }
-/* --- Sensor-Kacheln horizontal --- */
-#sensor-dashboard {
-    width:90%;
-    max-width:1000px;
-    margin:auto;
-}
-
-.sensor-container {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center; /* horizontal zentriert */
-    gap: 20px;
-    margin-bottom:20px;
-}
-
-.sensor {
-    width:100px;
-    min-width:100px;
-    padding:10px;
-    border-radius:16px;
-    color:#333;
-    box-shadow:0 4px 12px rgba(0,0,0,.2);
-    transition: transform 0.3s;
-}
-
-.sensor h2 {
-    font-size: 1em;
-    margin:0;
-    word-break: break-word;
-    text-align:center;
-}
 
 .value {
     font-size:1.1em;
@@ -120,8 +88,65 @@ body {
   100% { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 }
 
+.sensor-container {
+    flex: 0 0 auto; /* bleibt so groß wie die Kachel */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+.sensor {
+    width:100px;
+    min-width:100px;
+    padding:10px;
+    border-radius:16px;
+    color:#333;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
+    transition: transform 0.3s;
+
+}
+
+.sensor h2 {
+    font-size: 1em;
+    margin:0;
+    word-break: break-word;
+    text-align:center;
+}
+
 .sensor.pulse {
   animation: pulse 0.3s ease-in-out;
 }
+
+.shelly-container {
+    display: flex;
+    justify-content: flex-start; /* statt center */
+}
+
+.shelly-tile {
+    width:100px;
+    min-width:100px;
+    padding: 10px;
+    border-radius: 16px;
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    transition: transform 0.3s;
+
+}
+
+.dashboard {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;   /* oben bündig */
+    justify-content: center;   /* ganze Gruppe zentrieren */
+    gap: 20px;
+    width: 90%;
+    max-width: 1000px;         /* gleiche Breite wie dein Stream */
+    margin: 0 auto 20px;       /* mittig unter dem Stream */
+}
+
+.shelly-tile.pulse {
+    animation: pulse 0.3s ease-in-out;
+}   
 
 /* Optional: Platzhalter für scrollbare Graphen */

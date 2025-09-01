@@ -134,3 +134,18 @@ def today_readings():
     ).fetchall()
     conn.close()
     return rows
+
+
+def get_latest_shelly(sensor_id):
+    conn = sqlite3.connect(config.DB_FILE)
+    c = conn.cursor()
+    c.execute(
+        "SELECT timestamp, apower, aenergy, temperature FROM shelly_readings WHERE sensor_id = ? ORDER BY id DESC LIMIT 1",
+        (sensor_id,)
+    )
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return None
+    ts, apower, aenergy, temp = row
+    return {"timestamp": ts, "apower": apower, "aenergy": aenergy, "temp": temp}

@@ -24,17 +24,12 @@ def hls_files(filename):
 # --- Letzte Werte aller Sensoren ---
 @routes.route("/data")
 def data():
-    latest = database.get_latest_readings()  # dict {sensor: {timestamp, temp, hum}}
-    # Schlüssel anpassen für JS: temp/hum statt temperature/humidity
-    result = {
-    str(sid): {
-        "timestamp": vals["timestamp"],
-        "temp": vals["temp"],
-        "hum": vals["hum"]
-    }
-    for sid, vals in latest.items()
-    }
-    return jsonify(result)
+    bme = database.get_latest_readings()
+    shelly = database.get_latest_shelly(config.SHELLY_ID)
+    if shelly:
+        bme["Shelly"] = shelly   # wie ein normaler Sensor
+    return jsonify(bme)
+
 
 
 # --- Verlauf für Charts ---

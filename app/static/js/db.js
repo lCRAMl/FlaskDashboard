@@ -121,10 +121,30 @@ function initSensors(data){
             document.getElementById(`${name}-hum`).innerText  = lastHum  !== '--' ? `💧 ${lastHum} %` : '-- %';
 
             // Hintergrundfarbe direkt setzen
-            el.style.background = `linear-gradient(135deg, ${tempColor(lastTemp)}, ${humColor(lastHum)})`;
+            //el.style.background = `linear-gradient(135deg, ${tempColor(lastTemp)}, ${humColor(lastHum)})`;
         }
     });
 }
+
+function initShellyTile(data) {
+    const container = document.getElementById('shelly'); // 👉 eigener Container
+    container.innerHTML = ""; // alte Shelly-Kachel löschen, falls vorhanden
+
+    const el = document.createElement('div');
+    el.className = 'sensor shelly-tile';
+    el.innerHTML = `<h2>Shelly</h2>
+                    <div class="value" id="shelly-power">⚡ -- W</div>
+                    <div class="value" id="shelly-temp">🌡 -- °C</div>`;
+    container.appendChild(el);
+    sensorElements["Shelly"] = el;
+
+    if (data && data["Shelly"]) {
+        document.getElementById("shelly-power").innerText = `⚡ ${data["Shelly"].apower.toFixed(1)} W`;
+        document.getElementById("shelly-temp").innerText  = `🌡 ${data["Shelly"].temp.toFixed(1)} °C`;
+    }
+}
+
+
 function tempColor(t){ if(t===null) return '#9e9e9e'; let hue=240-(Math.min(Math.max(t,0),40)/40*240); return `hsl(${hue},70%,50%)`; }
 function humColor(h){ if(h===null) return '#9e9e9e'; let l=90-(Math.min(Math.max(h,0),100)/100*60); return `hsl(200,70%,${l}%)`; }
 
@@ -142,12 +162,13 @@ async function initDashboard() {
     const res = await fetch('/history'); 
     const data = await res.json();
 
-    // SENSOR_NAMES direkt aus den Keys von /history setzen
-    sensors = Object.keys(data);
+    initShellyTile(data)
+    // Normale Sensoren
+    sensors = Object.keys(data).filter(k => k !== "Shelly");
     initSensors(data);
 
+    // --- Charts ---
     let tempTraces = [], humTraces = [];
-
     sensors.forEach((name, idx) => {
         if (!data[name]) {
             console.warn(`⚠️ Keine Daten für Sensor ${name}`);
@@ -232,12 +253,23 @@ async function updateData() {
         const data = await res.json();
         // updateAverages(data);
 
-        // SENSOR_NAMES ggf. aktualisieren, falls sich Sensoren geändert haben
-        sensors = Object.keys(data);
+        // --- Shelly-Werte aktualisieren ---
+        if (data["Shelly"]) {
+            const s = data["Shelly"];
+            document.getElementById("shelly-power").innerText = s.apower != null ? `⚡ ${s.apower.toFixed(1)} W` : '-- W';
+            document.getElementById("shelly-temp").innerText  = s.temp   != null ? `🌡 ${s.temp.toFixed(1)} °C`   : '-- °C';
+        }
+        // Animation: pulsen wie die anderen
+        const el = sensorElements["Shelly"];
+        el.classList.remove('pulse');
+        void el.offsetWidth; // reflow trick
+        el.classList.add('pulse');
+
+        // --- Normale Sensoren wie gehabt ---
+        sensors = Object.keys(data).filter(k => k !== "Shelly");
 
         // Durchschnittswerte berechnen
         let tempSum = 0, humSum = 0, count = 0;
-
         sensors.forEach((name, idx) => {
             const v = data[name];
             const el = sensorElements[name]; 
@@ -252,8 +284,6 @@ async function updateData() {
                 humSum += hum;
                 count++;
             }
-            // Hintergrundfarbe setzen
-            el.style.background = `linear-gradient(135deg, ${tempColor(v.temp)}, ${humColor(v.hum)})`;
 
             // Werte in der Kachel aktualisieren
             document.getElementById(`${name}-temp`).innerText = temp != null ? `🌡 ${temp} °C` : '-- °C';
