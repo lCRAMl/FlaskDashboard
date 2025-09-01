@@ -83,20 +83,36 @@ def get_latest_bme_by_sensorid(sensor_id):
     conn.close()
     return row
 
-def get_latest_readings():
-    """Letzte Messwerte pro Sensor als Dict {sensor_id: {...}}."""
+def get_latest_readings(since=None):
+    """
+    Gibt die letzten Werte aller Sensoren zurück.
+    Optional nur Werte seit `since` (ISO-Zeitstring).
+    """
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
-    rows = c.execute("""
-        SELECT sensor_id, timestamp, temperature, humidity
-        FROM bme_readings
-        WHERE id IN (
-            SELECT MAX(id) FROM bme_readings GROUP BY sensor_id
-        )
-    """).fetchall()
+
+    if since:
+        c.execute("""
+            SELECT sensor_id, timestamp, temperature, humidity
+            FROM bme_readings
+            WHERE timestamp > ?
+            ORDER BY timestamp ASC
+        """, (since,))
+    else:
+        # Letzter Wert pro Sensor
+        c.execute("""
+            SELECT sensor_id, timestamp, temperature, humidity
+            FROM bme_readings
+            WHERE id IN (
+                SELECT MAX(id) FROM bme_readings GROUP BY sensor_id
+            )
+        """)
+
+    rows = c.fetchall()
     conn.close()
-    # Keys als Strings
+
     return {str(sensor_id): {"timestamp": ts, "temp": temp, "hum": hum} for sensor_id, ts, temp, hum in rows}
+
 
 
 # --- Wartung ---

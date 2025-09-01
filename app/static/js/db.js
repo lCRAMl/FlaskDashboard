@@ -177,6 +177,15 @@ const layouts = {
   }
 };
 
+let traceMap = {};
+
+function buildTraceMap() {
+  traceMap = {};
+  sensors.forEach((name, idx) => {
+    traceMap[name] = idx;
+  });
+}
+
 // --- Init Dashboard ---
 async function initDashboard() {
   const res = await fetch('/history');
@@ -185,22 +194,23 @@ async function initDashboard() {
   initShellyTile(data);
   sensors = Object.keys(data).filter(k => k !== "Shelly");
   initSensors(data);
-
+  buildTraceMap();   // <--- neues Mapping passend zu sensors
   Plotly.newPlot('tempChart', buildTraces(data, 'temp'), layouts.temp);
   Plotly.newPlot('humChart', buildTraces(data, 'hum'), layouts.hum);
 
   await updateData();
-  setInterval(updateData, 5000);
+  setInterval(updateData, 10000);
   initVideo();
 }
 
 // --- Live Updates ---
-const traceMap = { "CH0-0x76": 0, "CH0-0x77": 1 };
 const maxPoints = 50;
+let lastTimestamp = null;  // globaler Zeitstempel der letzten Aktualisierung
 
 async function updateData() {
   try {
-    const res = await fetch('/data');
+    const url = lastTimestamp ? `/data?since=${encodeURIComponent(lastTimestamp)}` : '/data';
+    const res = await fetch(url);
     const data = await res.json();
 
     // Shelly
@@ -208,6 +218,7 @@ async function updateData() {
       updateValue("shelly-power", data.Shelly.apower?.toFixed(1), 'W', '⚡');
       updateValue("shelly-temp", data.Shelly.temp?.toFixed(1), '°C', '🌡');
       setPulse(sensorElements["Shelly"]);
+      lastTimestamp = data.Shelly.timestamp;  // update lastTimestamp
     }
 
     // Sensoren
@@ -231,12 +242,16 @@ async function updateData() {
       if (v.temp != null) Plotly.extendTraces('tempChart', { x:[[ts]], y:[[v.temp]] }, [traceIdx]);
       if (v.hum != null)  Plotly.extendTraces('humChart', { x:[[ts]], y:[[v.hum]] }, [traceIdx]);
 
+      // Chart auf maxPoints beschränken
       const tempData = document.getElementById('tempChart').data[traceIdx]?.x || [];
       const humData = document.getElementById('humChart').data[traceIdx]?.x || [];
       if (tempData.length > maxPoints)
         Plotly.relayout('tempChart', { 'xaxis.range': [tempData.at(-maxPoints), tempData.at(-1)] });
       if (humData.length > maxPoints)
         Plotly.relayout('humChart', { 'xaxis.range': [humData.at(-maxPoints), humData.at(-1)] });
+
+      // letzten Timestamp merken
+      if (!lastTimestamp || ts > parseTimestamp(lastTimestamp)) lastTimestamp = v.timestamp;
     });
 
     document.getElementById('averages').innerHTML =
@@ -246,6 +261,7 @@ async function updateData() {
     console.error("updateData Fehler:", e);
   }
 }
+
 
 // --- DB ---
 async function clearDB() {

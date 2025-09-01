@@ -1,6 +1,6 @@
 # app/routes.py
 
-from flask import Blueprint, render_template, jsonify, send_from_directory
+from flask import Blueprint, render_template, jsonify, send_from_directory, request
 from . import database, config
 
 routes = Blueprint("routes", __name__)
@@ -24,11 +24,13 @@ def hls_files(filename):
 # --- Letzte Werte aller Sensoren ---
 @routes.route("/data")
 def data():
-    bme = database.get_latest_readings()
+    since = request.args.get("since")  # optional von Frontend übergeben
+    bme = database.get_latest_readings(since)
     shelly = database.get_latest_shelly(config.SHELLY_ID)
     if shelly:
-        bme["Shelly"] = shelly   # wie ein normaler Sensor
+        bme["Shelly"] = shelly
     return jsonify(bme)
+
 
 
 
