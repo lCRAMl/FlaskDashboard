@@ -4,7 +4,7 @@ const videoSrc = '/hls/stream.m3u8';
 
 // --- Farbpalette für Sensoren ---
 const sensorColors = [
-    '#FF5733', '#007BFF', '#28A745', '#FFC300', '#C70039', '#8E44AD', '#FF8C00', '#1ABC9C'
+    '#00e61fc5', '#007BFF', '#ff7300ff', '#FFC300', '#C70039', '#8E44AD', '#FF8C00', '#1ABC9C'
 ];
 
 function getSensorColor(idx){
@@ -144,18 +144,6 @@ function initShellyTile(data) {
     }
 }
 
-
-function tempColor(t){ if(t===null) return '#9e9e9e'; let hue=240-(Math.min(Math.max(t,0),40)/40*240); return `hsl(${hue},70%,50%)`; }
-function humColor(h){ if(h===null) return '#9e9e9e'; let l=90-(Math.min(Math.max(h,0),100)/100*60); return `hsl(200,70%,${l}%)`; }
-
-function updateAverages(data){
-    let tempSum = 0, humSum = 0, count = 0;
-    Object.values(data).forEach(v => { if(v.temp !== null && v.hum !== null){ tempSum += v.temp; humSum += v.hum; count++; } });
-    const avgTemp = count ? (tempSum/count).toFixed(1) : '--';
-    const avgHum  = count ? (humSum/count).toFixed(1) : '--';
-    document.getElementById('averages').innerHTML = `🌡 ${avgTemp} °C &nbsp;&nbsp; 💧 ${avgHum} %`;
-}
-
 // --- Dashboard initialisieren ---
 async function initDashboard() {
 
@@ -189,7 +177,7 @@ async function initDashboard() {
             x: timestamps,
             y: data[name].temp,
             type: 'scatter',
-            mode: 'lines+markers',
+            mode: 'lines',
             name: name,
             line: { color: color, width: 2, shape: 'spline' },
             marker: { size: 6, color: color },
@@ -200,7 +188,7 @@ async function initDashboard() {
             x: timestamps,
             y: data[name].hum,
             type: 'scatter',
-            mode: 'lines+markers',
+            mode: 'lines',
             name: name,
             line: { color: color, width: 2, shape: 'spline' },
             marker: { size: 6, color: color },
@@ -210,12 +198,12 @@ async function initDashboard() {
 
     const tempLayout = {
         title: { text: 'Temperaturen', font: { size: 20 }, x: 0.5 },
-        margin: { t: 30, b: 30, l: 35, r: 5 },
+        margin: { t: 35, b: 30, l: 35, r: 5 },
         height: 250,
-        plot_bgcolor: '#f9f9f9',
+        plot_bgcolor: '#f0f2f5',
         paper_bgcolor: '#f0f2f5',
         xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
-        yaxis: { range: [15, 30], title: '°C', showgrid: true, gridcolor: '#e0e0e0' },
+        yaxis: { type: 'linear', range: [15, 30], title: '°C', showgrid: false, gridcolor: '#e0e0e0' },
         shapes: [
             { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 18, y1: 18, line: { color: 'red', dash: 'dash' } },
             { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 28, y1: 28, line: { color: 'red', dash: 'dash' } }
@@ -225,12 +213,12 @@ async function initDashboard() {
 
     const humLayout = {
         title: { text: 'Luftfeuchtigkeit', font: { size: 20 }, x: 0.5 },
-        margin: { t: 30, b: 30, l: 35, r: 5 },
+        margin: { t: 35, b: 30, l: 35, r: 5 },
         height: 300,
-        plot_bgcolor: '#f9f9f9',
+        plot_bgcolor: '#f0f2f5',
         paper_bgcolor: '#f0f2f5',
         xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
-        yaxis: { range: [30, 80], title: '%', showgrid: true, gridcolor: '#e0e0e0' },
+        yaxis: { type: 'linear', range: [30, 80], title: '%', showgrid: false, gridcolor: '#e0e0e0' },
         shapes: [
             { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 40, y1: 40, line: { color: 'red', dash: 'dash' } },
             { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 70, y1: 70, line: { color: 'red', dash: 'dash' } }

@@ -64,7 +64,7 @@ def bme_sensor_loop():
             except Exception as e:
                 if DEBUG: print(f"[ERROR] Sensorloop {sensor_id}: {e}")
 
-        time.sleep(5)  # kleiner als die updatezeit im JS halten damit immer was neues da ist
+        time.sleep(20)  # kleiner als die updatezeit im JS halten damit immer was neues da ist
 
 
 
