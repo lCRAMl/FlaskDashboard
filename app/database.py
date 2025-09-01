@@ -64,9 +64,13 @@ def store_shelly_reading(sensor_id, timestamp, apower=None, aenergy=None, temper
 def get_last_bme_readings(limit=1000):
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
-    c.execute(
-        "SELECT timestamp, sensor_id, temperature, humidity FROM bme_readings ORDER BY id DESC LIMIT ?",
-        (limit,)
+    c.execute("""
+    SELECT timestamp, sensor_id, temperature, humidity
+    FROM (
+        SELECT * FROM bme_readings ORDER BY id DESC LIMIT ?
+    ) sub
+    ORDER BY id ASC
+    """, (limit,)
     )
     rows = c.fetchall()
     conn.close()
