@@ -51,7 +51,7 @@ def init_sensors():
     print(f"[INFO] Gefundene Sensoren: {list(sensor_map.values())}")
 
 # --- Endlosschleife im Thread ---
-def sensor_loop():
+def bme_sensor_loop():
     while True:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for (channel, addr), sensor_id in sensor_map.items():
@@ -60,11 +60,11 @@ def sensor_loop():
                 temp, hum = read_bme280(addr)
                 if temp is None: continue
 
-                database.store_reading(sensor_id, timestamp, temp, hum)
+                database.store_bme_reading(sensor_id, timestamp, temp, hum)
             except Exception as e:
                 if DEBUG: print(f"[ERROR] Sensorloop {sensor_id}: {e}")
 
-        time.sleep(60)  # kleiner als die updatezeit im JS halten damit immer was neues da ist
+        time.sleep(5)  # kleiner als die updatezeit im JS halten damit immer was neues da ist
 
 
 
@@ -95,9 +95,10 @@ def shelly_loop():
         if apower is not None:
             # Werte in DB speichern, ähnlich wie bei BME280
             # Wir speichern hier drei Spalten: Leistung, Energie, Temperatur
-            database.store_reading(f"{config.SHELLY_ID}-apower", timestamp, apower, None)
-            database.store_reading(f"{config.SHELLY_ID}-aenergy", timestamp, energie_total, None)
-            database.store_reading(f"{config.SHELLY_ID}-temperature", timestamp, temperatur, None)
+            database.store_shelly_reading(config.SHELLY_ID, timestamp,
+                              apower=apower,
+                              aenergy=energie_total,
+                              temperature=temperatur)
         time.sleep(60)
 
 
@@ -105,7 +106,7 @@ def shelly_loop():
 
 # --- Thread starten ---
 def start_loop():
-    t = threading.Thread(target=sensor_loop, daemon=True)
+    t = threading.Thread(target=bme_sensor_loop, daemon=True)
     t.start()
     s = threading.Thread(target=shelly_loop, daemon=True)
     s.start()

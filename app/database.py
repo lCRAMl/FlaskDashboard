@@ -11,46 +11,72 @@ from . import config
 def init_db():
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
+    # Tabelle für BME280
     c.execute("""
-        CREATE TABLE IF NOT EXISTS readings (
+        CREATE TABLE IF NOT EXISTS bme_readings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sensor_id INTEGER,
+            sensor_id TEXT,
             timestamp TEXT,
             temperature REAL,
             humidity REAL
         )
     """)
+
+    # Tabelle für Shelly
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS shelly_readings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sensor_id TEXT,
+            timestamp TEXT,
+            apower REAL,
+            aenergy REAL,
+            temperature REAL
+        )
+    """)
     conn.commit()
     conn.close()
 
-# --- Schreiben ---
-def store_reading(sensor_id, timestamp, temperature, humidity):
+# --- BME Schreiben ---
+def store_bme_reading(sensor_id, timestamp, temperature=None, humidity=None):
+    if temperature is None and humidity is None:
+        return
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     c.execute(
-        "INSERT INTO readings (sensor_id, timestamp, temperature, humidity) VALUES (?, ?, ?, ?)",
+        "INSERT INTO bme_readings (sensor_id, timestamp, temperature, humidity) VALUES (?, ?, ?, ?)",
         (sensor_id, timestamp, temperature, humidity)
     )
     conn.commit()
     conn.close()
 
-# --- Lesen ---
-def get_readings(limit=100):
+# --- Shelly Schreiben ---
+def store_shelly_reading(sensor_id, timestamp, apower=None, aenergy=None, temperature=None):
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     c.execute(
-        "SELECT sensor_id, timestamp, temperature, humidity FROM readings ORDER BY id DESC LIMIT ?",
+        "INSERT INTO shelly_readings (sensor_id, timestamp, apower, aenergy, temperature) VALUES (?, ?, ?, ?, ?)",
+        (sensor_id, timestamp, apower, aenergy, temperature)
+    )
+    conn.commit()
+    conn.close()
+
+# --- BME Lesen ---
+def get_last_bme_readings(limit=1000):
+    conn = sqlite3.connect(config.DB_FILE)
+    c = conn.cursor()
+    c.execute(
+        "SELECT timestamp, sensor_id, temperature, humidity FROM bme_readings ORDER BY id DESC LIMIT ?",
         (limit,)
     )
     rows = c.fetchall()
     conn.close()
     return rows
 
-def get_latest_by_sensor(sensor_id):
+def get_latest_bme_by_sensorid(sensor_id):
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     c.execute(
-        "SELECT timestamp, temperature, humidity FROM readings WHERE sensor_id = ? ORDER BY id DESC LIMIT 1",
+        "SELECT timestamp, temperature, humidity FROM bme_readings WHERE sensor_id = ? ORDER BY id DESC LIMIT 1",
         (sensor_id,)
     )
     row = c.fetchone()
@@ -63,9 +89,9 @@ def get_latest_readings():
     c = conn.cursor()
     rows = c.execute("""
         SELECT sensor_id, timestamp, temperature, humidity
-        FROM readings
+        FROM bme_readings
         WHERE id IN (
-            SELECT MAX(id) FROM readings GROUP BY sensor_id
+            SELECT MAX(id) FROM bme_readings GROUP BY sensor_id
         )
     """).fetchall()
     conn.close()
@@ -77,7 +103,7 @@ def get_latest_readings():
 def clear_data():
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
-    c.execute("DELETE FROM readings")
+    c.execute("DELETE FROM bme_readings")
     conn.commit()
     conn.close()
     init_db()
@@ -85,7 +111,7 @@ def clear_data():
 def csvdump():
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
-    rows = c.execute("SELECT timestamp, sensor_id, temperature, humidity FROM readings ORDER BY timestamp ASC").fetchall()
+    rows = c.execute("SELECT timestamp, sensor_id, temperature, humidity FROM bme_readings ORDER BY timestamp ASC").fetchall()
     conn.close()
     output = io.StringIO()
     writer = csv.writer(output)
@@ -103,7 +129,7 @@ def today_readings():
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     rows = c.execute(
-        "SELECT timestamp, sensor_id, temperature, humidity FROM readings WHERE timestamp >= ? ORDER BY timestamp ASC",
+        "SELECT timestamp, sensor_id, temperature, humidity FROM bme_readings WHERE timestamp >= ? ORDER BY timestamp ASC",
         (today_start.strftime("%Y-%m-%d %H:%M:%S"),)
     ).fetchall()
     conn.close()

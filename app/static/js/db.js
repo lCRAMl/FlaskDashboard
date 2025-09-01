@@ -101,8 +101,9 @@ let sensorElements = {};
 let tempChart, humChart;
 
 // --- Sensor-Kacheln initialisieren ---
-function initSensors(){
+function initSensors(data){
     const container = document.getElementById('sensors');
+    container.innerHTML = '';  // alte Kacheln löschen
     sensors.forEach(name=>{
         const el = document.createElement('div');
         el.className = 'sensor';
@@ -111,6 +112,17 @@ function initSensors(){
                         <div class="value" id="${name}-hum"></div>`;
         container.appendChild(el);
         sensorElements[name] = el;
+
+        // --- letzte Werte aus data setzen ---
+        if (data && data[name]) {
+            const lastTemp = data[name].temp?.[0] ?? '--';
+            const lastHum  = data[name].hum?.[0] ?? '--';
+            document.getElementById(`${name}-temp`).innerText = lastTemp !== '--' ? `🌡 ${lastTemp} °C` : '-- °C';
+            document.getElementById(`${name}-hum`).innerText  = lastHum  !== '--' ? `💧 ${lastHum} %` : '-- %';
+
+            // Hintergrundfarbe direkt setzen
+            el.style.background = `linear-gradient(135deg, ${tempColor(lastTemp)}, ${humColor(lastHum)})`;
+        }
     });
 }
 function tempColor(t){ if(t===null) return '#9e9e9e'; let hue=240-(Math.min(Math.max(t,0),40)/40*240); return `hsl(${hue},70%,50%)`; }
@@ -126,21 +138,28 @@ function updateAverages(data){
 
 // --- Dashboard initialisieren ---
 async function initDashboard() {
-    initSensors();
 
     const res = await fetch('/history'); 
     const data = await res.json();
 
+    // SENSOR_NAMES direkt aus den Keys von /history setzen
+    sensors = Object.keys(data);
+    initSensors(data);
+
     let tempTraces = [], humTraces = [];
 
     sensors.forEach((name, idx) => {
+        if (!data[name]) {
+            console.warn(`⚠️ Keine Daten für Sensor ${name}`);
+            return;
+        }
         let timestamps = [];
         if (data[name].timestamps && data[name].timestamps.length) {
-            timestamps = data[name].timestamps.map(ts => ts.replace(' ', 'T'));
+            timestamps = data[name].timestamps.map(ts => parseTimestamp(ts));
         } else {
             const len = data[name].temp.length;
             const now = new Date();
-            timestamps = data[name].temp.map((_, i) => new Date(now - (len - i) * 5000).toISOString());
+            timestamps = data[name].temp.map((_, i) => now - (len - i) * 5000);
         }
 
         const color = getSensorColor(idx);
@@ -192,8 +211,8 @@ async function initDashboard() {
         xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
         yaxis: { range: [30, 80], title: '%', showgrid: true, gridcolor: '#e0e0e0' },
         shapes: [
-            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 40, y1: 40, line: { color: 'blue', dash: 'dash' } },
-            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 70, y1: 70, line: { color: 'blue', dash: 'dash' } }
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 40, y1: 40, line: { color: 'red', dash: 'dash' } },
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 70, y1: 70, line: { color: 'red', dash: 'dash' } }
         ],
         hovermode: 'closest'
     };
@@ -211,22 +230,34 @@ async function updateData() {
     try {
         const res = await fetch('/data'); 
         const data = await res.json();
-        updateAverages(data);
+        // updateAverages(data);
 
-        const now = new Date().toISOString();
-        const maxPoints = 50; // nur die letzten 50 Messwerte anzeigen
+        // SENSOR_NAMES ggf. aktualisieren, falls sich Sensoren geändert haben
+        sensors = Object.keys(data);
+
+        // Durchschnittswerte berechnen
+        let tempSum = 0, humSum = 0, count = 0;
 
         sensors.forEach((name, idx) => {
             const v = data[name];
             const el = sensorElements[name]; 
-            if (!el) return;
+            if (!el || !v) return;  // <<< hier absichern
 
+            // Werte prüfen
+            const temp = v.temp != null ? v.temp : null;
+            const hum  = v.hum  != null ? v.hum  : null;
+
+            if (temp != null && hum != null) {
+                tempSum += temp;
+                humSum += hum;
+                count++;
+            }
             // Hintergrundfarbe setzen
             el.style.background = `linear-gradient(135deg, ${tempColor(v.temp)}, ${humColor(v.hum)})`;
 
             // Werte in der Kachel aktualisieren
-            document.getElementById(`${name}-temp`).innerText = `🌡 ${v.temp} °C`;
-            document.getElementById(`${name}-hum`).innerText  = `💧 ${v.hum} %`;
+            document.getElementById(`${name}-temp`).innerText = temp != null ? `🌡 ${temp} °C` : '-- °C';
+            document.getElementById(`${name}-hum`).innerText  = hum  != null ? `💧 ${hum} %` : '-- %';
 
             // Puls-Animation triggern
             el.classList.remove('pulse');    // vorherige Animation zurücksetzen
@@ -241,6 +272,7 @@ async function updateData() {
             Plotly.extendTraces('humChart', { x:[[ts]], y:[[v.hum]] }, [idx]);
 
             // Scrollen auf die letzten maxPoints
+            const maxPoints = 50; // nur die letzten 50 Messwerte anzeigen
             const tempData = document.getElementById('tempChart').data[idx].x;
             const humData  = document.getElementById('humChart').data[idx].x;
 
@@ -256,6 +288,11 @@ async function updateData() {
             }
         });
 
+        // Durchschnittswerte setzen
+        const avgTemp = count ? (tempSum / count).toFixed(1) : '--';
+        const avgHum  = count ? (humSum  / count).toFixed(1)  : '--';
+        document.getElementById('averages').innerHTML = `🌡 ${avgTemp} °C &nbsp;&nbsp; 💧 ${avgHum} %`;
+
     } catch(e) {
         console.error(e);
     }
@@ -264,9 +301,48 @@ async function updateData() {
 
 // DB
 async function clearDB(){ 
-    await fetch('/clear',{method:'POST'}); 
-    tempChart.updateSeries([]); humChart.updateSeries([]); 
+    try {
+        await fetch('/clear', { method:'POST' }); 
+
+        // Charts komplett neu erstellen, Layout behalten
+        const tempLayout = {
+            title: { text: 'Temperaturen', font: { size: 20 }, x: 0.5 },
+            margin: { t: 30, b: 30, l: 35, r: 5 },
+            height: 250,
+            plot_bgcolor: '#f9f9f9',
+            paper_bgcolor: '#f0f2f5',
+            xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
+            yaxis: { range: [15, 30], title: '°C', showgrid: true, gridcolor: '#e0e0e0' },
+            shapes: [
+                { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 18, y1: 18, line: { color: 'red', dash: 'dash' } },
+                { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 28, y1: 28, line: { color: 'red', dash: 'dash' } }
+            ],
+            hovermode: 'closest'
+        };
+
+        const humLayout = {
+            title: { text: 'Luftfeuchtigkeit', font: { size: 20 }, x: 0.5 },
+            margin: { t: 30, b: 30, l: 35, r: 5 },
+            height: 300,
+            plot_bgcolor: '#f9f9f9',
+            paper_bgcolor: '#f0f2f5',
+            xaxis: { type: 'date', title: 'Zeit', showgrid: true, gridcolor: '#e0e0e0' },
+            yaxis: { range: [30, 80], title: '%', showgrid: true, gridcolor: '#e0e0e0' },
+            shapes: [
+                { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 40, y1: 40, line: { color: 'red', dash: 'dash' } },
+                { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 70, y1: 70, line: { color: 'red', dash: 'dash' } }
+            ],
+            hovermode: 'closest'
+        };
+
+        // Leere Charts neu erstellen
+        Plotly.newPlot('tempChart', [], tempLayout);
+        Plotly.newPlot('humChart', [], humLayout);
+    } catch(e) {
+        console.error("clearDB Fehler:", e);
+    }
 }
+
 function exportCSV(){ window.location.href='/export'; }
 
 // --- Startpunkt ---
