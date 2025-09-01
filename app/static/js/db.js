@@ -247,86 +247,94 @@ async function initDashboard() {
 }
 
 // --- Live-Daten nachführen ---
+// --- Mapping Sensorname → Plotly Trace Index ---
+const traceMap = {
+  "CH0-0x76": 0, // erster BME280
+  "CH0-0x77": 1, // zweiter BME280
+  // weitere Sensoren hier ergänzen
+  // Shelly hat keine Traces, wird separat behandelt
+};
+
+const maxPoints = 50; // Anzahl an Punkten im Chart
+
 async function updateData() {
-    try {
-        const res = await fetch('/data'); 
-        const data = await res.json();
-        // updateAverages(data);
+  try {
+    const res = await fetch('/data');
+    const data = await res.json();
 
-        // --- Shelly-Werte aktualisieren ---
-        if (data["Shelly"]) {
-            const s = data["Shelly"];
-            document.getElementById("shelly-power").innerText = s.apower != null ? `⚡ ${s.apower.toFixed(1)} W` : '-- W';
-            document.getElementById("shelly-temp").innerText  = s.temp   != null ? `🌡 ${s.temp.toFixed(1)} °C`   : '-- °C';
-        }
-        // Animation: pulsen wie die anderen
-        const el = sensorElements["Shelly"];
-        el.classList.remove('pulse');
-        void el.offsetWidth; // reflow trick
-        el.classList.add('pulse');
+    // --- Shelly-Werte ---
+    if (data["Shelly"]) {
+      const s = data["Shelly"];
+      document.getElementById("shelly-power").innerText = s.apower != null ? `⚡ ${s.apower.toFixed(1)} W` : '-- W';
+      document.getElementById("shelly-temp").innerText = s.temp != null ? `🌡 ${s.temp.toFixed(1)} °C` : '-- °C';
 
-        // --- Normale Sensoren wie gehabt ---
-        sensors = Object.keys(data).filter(k => k !== "Shelly");
-
-        // Durchschnittswerte berechnen
-        let tempSum = 0, humSum = 0, count = 0;
-        sensors.forEach((name, idx) => {
-            const v = data[name];
-            const el = sensorElements[name]; 
-            if (!el || !v) return;  // <<< hier absichern
-
-            // Werte prüfen
-            const temp = v.temp != null ? v.temp : null;
-            const hum  = v.hum  != null ? v.hum  : null;
-
-            if (temp != null && hum != null) {
-                tempSum += temp;
-                humSum += hum;
-                count++;
-            }
-
-            // Werte in der Kachel aktualisieren
-            document.getElementById(`${name}-temp`).innerText = temp != null ? `🌡 ${temp} °C` : '-- °C';
-            document.getElementById(`${name}-hum`).innerText  = hum  != null ? `💧 ${hum} %` : '-- %';
-
-            // Puls-Animation triggern
-            el.classList.remove('pulse');    // vorherige Animation zurücksetzen
-            void el.offsetWidth;             // Trigger für Neuanlauf
-            el.classList.add('pulse');       // Animation starten
-
-            // Timestamp prüfen
-            const ts = v.timestamp ? parseTimestamp(v.timestamp) : Date.now();
-
-            // Plotly: neue Daten anhängen
-            Plotly.extendTraces('tempChart', { x:[[ts]], y:[[v.temp]] }, [idx]);
-            Plotly.extendTraces('humChart', { x:[[ts]], y:[[v.hum]] }, [idx]);
-
-            // Scrollen auf die letzten maxPoints
-            const maxPoints = 50; // nur die letzten 50 Messwerte anzeigen
-            const tempData = document.getElementById('tempChart').data[idx].x;
-            const humData  = document.getElementById('humChart').data[idx].x;
-
-            if (tempData.length > maxPoints) {
-                Plotly.relayout('tempChart', {
-                    'xaxis.range': [tempData[tempData.length - maxPoints], tempData[tempData.length - 1]]
-                });
-            }
-            if (humData.length > maxPoints) {
-                Plotly.relayout('humChart', {
-                    'xaxis.range': [humData[humData.length - maxPoints], humData[humData.length - 1]]
-                });
-            }
-        });
-
-        // Durchschnittswerte setzen
-        const avgTemp = count ? (tempSum / count).toFixed(1) : '--';
-        const avgHum  = count ? (humSum  / count).toFixed(1)  : '--';
-        document.getElementById('averages').innerHTML = `🌡 ${avgTemp} °C &nbsp;&nbsp; 💧 ${avgHum} %`;
-
-    } catch(e) {
-        console.error(e);
+      const el = sensorElements["Shelly"];
+      if (el) {
+        el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+      }
     }
+
+    // --- Normale Sensoren ---
+    const sensors = Object.keys(data).filter(k => k !== "Shelly");
+    let tempSum = 0, humSum = 0, count = 0;
+
+    sensors.forEach(name => {
+      const v = data[name];
+      const el = sensorElements[name];
+      if (!el || !v) return;
+
+      const temp = v.temp != null ? v.temp : null;
+      const hum = v.hum != null ? v.hum : null;
+
+      // Kachel aktualisieren
+      document.getElementById(`${name}-temp`).innerText = temp != null ? `🌡 ${temp} °C` : '-- °C';
+      document.getElementById(`${name}-hum`).innerText = hum != null ? `💧 ${hum} %` : '-- %';
+
+      // Puls-Animation
+      el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+
+      // Durchschnittswerte
+      if (temp != null && hum != null) {
+        tempSum += temp;
+        humSum += hum;
+        count++;
+      }
+
+      // Timestamp
+      const ts = v.timestamp ? parseTimestamp(v.timestamp) : Date.now();
+
+      // Plotly Trace Index
+      const traceIdx = traceMap[name];
+      if (traceIdx === undefined) {
+        console.warn("Kein Trace für Sensor:", name);
+      return;
+      }
+      // Daten nur hinzufügen, wenn Werte existieren
+      if (temp != null) Plotly.extendTraces('tempChart', { x:[[ts]], y:[[temp]] }, [traceIdx]);
+      if (hum != null)  Plotly.extendTraces('humChart', { x:[[ts]], y:[[hum]] }, [traceIdx]);
+
+      // Nur die letzten maxPoints anzeigen
+      const tempData = document.getElementById('tempChart').data[traceIdx]?.x || [];
+      const humData = document.getElementById('humChart').data[traceIdx]?.x || [];
+
+      if (tempData.length > maxPoints) {
+        Plotly.relayout('tempChart', { 'xaxis.range': [tempData[tempData.length - maxPoints], tempData[tempData.length - 1]] });
+      }
+      if (humData.length > maxPoints) {
+        Plotly.relayout('humChart', { 'xaxis.range': [humData[humData.length - maxPoints], humData[humData.length - 1]] });
+      }
+    });
+
+    // Durchschnittswerte in Kachel
+    const avgTemp = count ? (tempSum / count).toFixed(1) : '--';
+    const avgHum = count ? (humSum / count).toFixed(1) : '--';
+    document.getElementById('averages').innerHTML = `🌡 ${avgTemp} °C &nbsp;&nbsp; 💧 ${avgHum} %`;
+
+  } catch(e) {
+    console.error("updateData Fehler:", e);
+  }
 }
+
 
 
 // DB
