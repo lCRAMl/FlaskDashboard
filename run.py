@@ -28,8 +28,7 @@ if __name__ == "__main__":
     database.init_db()
 
     # Sensorloop Thread
-    sensor_thread = threading.Thread(target=start_sensors, daemon=True)
-    sensor_thread.start()
+    start_sensors()
 
     # Stream Thread
     stream_thread = threading.Thread(target=start_stream, daemon=True)
