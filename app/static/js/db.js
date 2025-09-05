@@ -117,15 +117,15 @@ function initShellyTile(data) {
   el.className = 'sensor shelly-tile';
   el.innerHTML = `
     <h2>Shelly</h2>
-    <div class="value" id="shelly-power">⚡ -- W</div>
     <div class="value" id="shelly-temp">🌡 -- °C</div>
+    <div class="value" id="shelly-power">⚡ -- W</div>
   `;
   container.appendChild(el);
   sensorElements["Shelly"] = el;
 
   if (data?.Shelly) {
-    updateValue("shelly-power", data.Shelly.apower?.toFixed(1), 'W', '⚡');
     updateValue("shelly-temp", data.Shelly.temp?.toFixed(1), '°C', '🌡');
+    updateValue("shelly-power", data.Shelly.apower?.toFixed(1), 'W', '⚡');
   }
 }
 
@@ -136,15 +136,15 @@ function initPiTile(data) {
   el.className = 'sensor pi-tile';
   el.innerHTML = `
     <h2>Raspberry</h2>
-    <div class="value" id="pi-cpu">🖥️ -- %</div>
     <div class="value" id="pi-temp">🌡 -- °C</div>
+    <div class="value" id="pi-cpu">🖥️ -- %</div>
   `;
   container.appendChild(el);
   sensorElements["Pi"] = el;
 
   if (data?.Pi) {
-    updateValue("pi-cpu", data.Pi.cpu?.toFixed(1), '%', '🖥️');
     updateValue("pi-temp", data.Pi.temp?.toFixed(1), '°C', '🌡');
+    updateValue("pi-cpu", data.Pi.cpu?.toFixed(1), '%', '🖥️');
   }
 }
 
@@ -237,15 +237,15 @@ async function updateData() {
 
     // Raspberry Pi
     if (data.Pi) {
-      updateValue("pi-cpu", data.Pi.cpu?.toFixed(1), '%', '🖥️');
       updateValue("pi-temp", data.Pi.temp?.toFixed(1), '°C', '🌡');
+      updateValue("pi-cpu", data.Pi.cpu?.toFixed(1), '%', '🖥️');
       setPulse(sensorElements["Pi"]);
     }
 
     // Shelly
     if (data.Shelly) {
-      updateValue("shelly-power", data.Shelly.apower?.toFixed(1), 'W', '⚡');
       updateValue("shelly-temp", data.Shelly.temp?.toFixed(1), '°C', '🌡');
+      updateValue("shelly-power", data.Shelly.apower?.toFixed(1), 'W', '⚡');
       setPulse(sensorElements["Shelly"]);
       lastTimestamp = data.Shelly.timestamp;  // update lastTimestamp
     }
