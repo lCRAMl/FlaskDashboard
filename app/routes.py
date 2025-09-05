@@ -33,7 +33,6 @@ def data():
 
 
 
-
 # --- Verlauf für Charts ---
 @routes.route("/history")
 def history():

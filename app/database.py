@@ -89,21 +89,33 @@ def get_latest_bme_by_sensorid(sensor_id):
 
 def get_latest_readings(since=None):
     """
-    Gibt die letzten Werte aller Sensoren zurück.
-    Optional nur Werte seit `since` (ISO-Zeitstring).
+    Gibt für jeden Sensor den neuesten Wert zurück.
+    Falls seit `since` nichts Neues kam, wird der letzte bekannte Wert geliefert.
     """
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
 
+    result = {}
+
     if since:
+        # 1. Neue Werte seit 'since'
         c.execute("""
-            SELECT sensor_id, timestamp, temperature, humidity
+            SELECT sensor_id, MAX(timestamp), temperature, humidity
             FROM bme_readings
             WHERE timestamp > ?
-            ORDER BY timestamp ASC
+            GROUP BY sensor_id
         """, (since,))
-    else:
-        # Letzter Wert pro Sensor
+        rows_new = c.fetchall()
+
+        # Neue Werte in Ergebnis übernehmen
+        for sensor_id, ts, temp, hum in rows_new:
+            result[str(sensor_id)] = {
+                "timestamp": ts,
+                "temp": temp,
+                "hum": hum
+            }
+
+        # 2. Für Sensoren ohne neue Werte: letzten bekannten Wert davor
         c.execute("""
             SELECT sensor_id, timestamp, temperature, humidity
             FROM bme_readings
@@ -111,11 +123,35 @@ def get_latest_readings(since=None):
                 SELECT MAX(id) FROM bme_readings GROUP BY sensor_id
             )
         """)
+        rows_last = c.fetchall()
 
-    rows = c.fetchall()
+        for sensor_id, ts, temp, hum in rows_last:
+            if str(sensor_id) not in result:  # nur ergänzen, wenn kein neuer Wert existiert
+                result[str(sensor_id)] = {
+                    "timestamp": ts,
+                    "temp": temp,
+                    "hum": hum
+                }
+
+    else:
+        # Ohne since → letzter Wert pro Sensor
+        c.execute("""
+            SELECT sensor_id, timestamp, temperature, humidity
+            FROM bme_readings
+            WHERE id IN (
+                SELECT MAX(id) FROM bme_readings GROUP BY sensor_id
+            )
+        """)
+        rows = c.fetchall()
+        for sensor_id, ts, temp, hum in rows:
+            result[str(sensor_id)] = {
+                "timestamp": ts,
+                "temp": temp,
+                "hum": hum
+            }
+
     conn.close()
-
-    return {str(sensor_id): {"timestamp": ts, "temp": temp, "hum": hum} for sensor_id, ts, temp, hum in rows}
+    return result
 
 
 

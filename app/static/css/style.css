@@ -149,4 +149,22 @@ body {
     animation: pulse 0.3s ease-in-out;
 }   
 
-/* Optional: Platzhalter für scrollbare Graphen */
+.pi-container {
+    display: flex;
+    justify-content: flex-start; /* statt center */
+}
+
+.pi-tile {
+    width:100px;
+    min-width:100px;
+    padding: 10px;
+    border-radius: 16px;
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    transition: transform 0.3s;
+
+}
+
+.pi-tile.pulse {
+    animation: pulse 0.3s ease-in-out;
+}   

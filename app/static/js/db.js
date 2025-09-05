@@ -158,7 +158,7 @@ const layouts = {
     margin: { t: 35, b: 30, l: 35, r: 5 },
     height: 250, plot_bgcolor: '#f0f2f5', paper_bgcolor: '#f0f2f5',
     xaxis: { type: 'date', title: 'Zeit', gridcolor: '#e0e0e0' },
-    yaxis: { range: [15, 30], title: '°C' },
+    yaxis: { range: [15, 40], title: '°C' },
     shapes: [
       { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 18, y1: 18, line: { color: 'red', dash: 'dash' } },
       { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 28, y1: 28, line: { color: 'red', dash: 'dash' } }
@@ -169,7 +169,7 @@ const layouts = {
     margin: { t: 35, b: 30, l: 35, r: 5 },
     height: 300, plot_bgcolor: '#f0f2f5', paper_bgcolor: '#f0f2f5',
     xaxis: { type: 'date', title: 'Zeit', gridcolor: '#e0e0e0' },
-    yaxis: { range: [30, 80], title: '%' },
+    yaxis: { range: [20, 70], title: '%' },
     shapes: [
       { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 40, y1: 40, line: { color: 'red', dash: 'dash' } },
       { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 70, y1: 70, line: { color: 'red', dash: 'dash' } }
