@@ -1,7 +1,7 @@
 # app/routes.py
 
 from flask import Blueprint, render_template, jsonify, send_from_directory, request
-from . import database, config
+from . import database, config, systeminfo
 
 routes = Blueprint("routes", __name__)
 
@@ -26,9 +26,8 @@ def hls_files(filename):
 def data():
     since = request.args.get("since")  # optional von Frontend übergeben
     bme = database.get_latest_readings(since)
-    shelly = database.get_latest_shelly(config.SHELLY_ID)
-    if shelly:
-        bme["Shelly"] = shelly
+    bme["Shelly"] = database.get_latest_shelly(config.SHELLY_ID)
+    bme["Pi"] = systeminfo.get_pi_stats()
     return jsonify(bme)
 
 
@@ -53,6 +52,9 @@ def history():
 
     if not data:
         data = {"default": {"timestamps": [], "temp": [], "hum": []}}
+        
+    # Pi-Info hinzufügen (ohne Historie, nur aktueller Wert)
+    data["Pi"] = systeminfo.get_pi_stats()
 
     return jsonify(data)
 

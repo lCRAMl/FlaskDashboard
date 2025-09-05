@@ -129,11 +129,31 @@ function initShellyTile(data) {
   }
 }
 
+function initPiTile(data) {
+  const container = document.getElementById('pi');
+  container.innerHTML = "";
+  const el = document.createElement('div');
+  el.className = 'sensor pi-tile';
+  el.innerHTML = `
+    <h2>Raspberry</h2>
+    <div class="value" id="pi-cpu">🖥️ -- %</div>
+    <div class="value" id="pi-temp">🌡 -- °C</div>
+  `;
+  container.appendChild(el);
+  sensorElements["Pi"] = el;
+
+  if (data?.Pi) {
+    updateValue("pi-cpu", data.Pi.cpu?.toFixed(1), '%', '🖥️');
+    updateValue("pi-temp", data.Pi.temp?.toFixed(1), '°C', '🌡');
+  }
+}
+
 // --- Charts ---
 function buildTraces(data, type) {
   return sensors.map((name, idx) => {
     const s = data[name];
-    if (!s) return null;
+    if (!s || !Array.isArray(s[type])) return null;  // ❗ Schutz
+
     const timestamps = (s.timestamps?.length)
       ? s.timestamps.map(parseTimestamp)
       : s.temp.map((_, i) => Date.now() - (s.temp.length - i) * 5000);
@@ -191,8 +211,10 @@ async function initDashboard() {
   const res = await fetch('/history');
   const data = await res.json();
 
+  initPiTile(data);
   initShellyTile(data);
-  sensors = Object.keys(data).filter(k => k !== "Shelly");
+  // Nur echte Sensoren in Charts einfügen
+  sensors = Object.keys(data).filter(k => !["Shelly", "Pi"].includes(k));
   initSensors(data);
   buildTraceMap();   // <--- neues Mapping passend zu sensors
   Plotly.newPlot('tempChart', buildTraces(data, 'temp'), layouts.temp);
@@ -212,6 +234,13 @@ async function updateData() {
     const url = lastTimestamp ? `/data?since=${encodeURIComponent(lastTimestamp)}` : '/data';
     const res = await fetch(url);
     const data = await res.json();
+
+    // Raspberry Pi
+    if (data.Pi) {
+      updateValue("pi-cpu", data.Pi.cpu?.toFixed(1), '%', '🖥️');
+      updateValue("pi-temp", data.Pi.temp?.toFixed(1), '°C', '🌡');
+      setPulse(sensorElements["Pi"]);
+    }
 
     // Shelly
     if (data.Shelly) {
@@ -245,10 +274,6 @@ async function updateData() {
       // Chart auf maxPoints beschränken
       const tempData = document.getElementById('tempChart').data[traceIdx]?.x || [];
       const humData = document.getElementById('humChart').data[traceIdx]?.x || [];
-      if (tempData.length > maxPoints)
-        Plotly.relayout('tempChart', { 'xaxis.range': [tempData.at(-maxPoints), tempData.at(-1)] });
-      if (humData.length > maxPoints)
-        Plotly.relayout('humChart', { 'xaxis.range': [humData.at(-maxPoints), humData.at(-1)] });
 
       // letzten Timestamp merken
       if (!lastTimestamp || ts > parseTimestamp(lastTimestamp)) lastTimestamp = v.timestamp;
