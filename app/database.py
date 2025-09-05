@@ -40,6 +40,7 @@ def init_db():
 def store_bme_reading(sensor_id, timestamp, temperature=None, humidity=None):
     if temperature is None and humidity is None:
         return
+    prune_old_readings(24)  # löscht alte Werte vor jedem Insert
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     c.execute(
@@ -51,6 +52,7 @@ def store_bme_reading(sensor_id, timestamp, temperature=None, humidity=None):
 
 # --- Shelly Schreiben ---
 def store_shelly_reading(sensor_id, timestamp, apower=None, aenergy=None, temperature=None):
+    prune_old_readings(24)  # löscht alte Werte vor jedem Insert
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     c.execute(
@@ -205,3 +207,23 @@ def get_latest_shelly(sensor_id):
         return None
     ts, apower, aenergy, temp = row
     return {"timestamp": ts, "apower": apower, "aenergy": aenergy, "temp": temp}
+
+
+def prune_old_readings(hours=24):
+    """
+    Löscht alle Einträge in BME- und Shelly-Tabellen, die älter als `hours` Stunden sind.
+    """
+    cutoff = datetime.now() - timedelta(hours=hours)
+    cutoff_str = cutoff.strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = sqlite3.connect(config.DB_FILE)
+    c = conn.cursor()
+
+    # BME
+    c.execute("DELETE FROM bme_readings WHERE timestamp < ?", (cutoff_str,))
+    # Shelly
+    c.execute("DELETE FROM shelly_readings WHERE timestamp < ?", (cutoff_str,))
+
+    conn.commit()
+    conn.close()
+
