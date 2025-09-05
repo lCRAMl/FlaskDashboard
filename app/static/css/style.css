@@ -7,7 +7,7 @@ body {
 }
 
 #averages {
-    font-size:2em;
+    font-size:3em;
     margin-bottom:20px;
     color:#333;
 }
@@ -51,7 +51,8 @@ body {
 .bottom-buttons button {
     font-size: 2em;         /* größere Icons */
     padding: 10px 16px;
-    color: #fff;
+    color: #f0f2f5;
+    background-color: #f0f2f5;
     border: none;
     cursor: pointer;
     transition: transform 0.2s;
