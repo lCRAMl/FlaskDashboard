@@ -40,7 +40,6 @@ def init_db():
 def store_bme_reading(sensor_id, timestamp, temperature=None, humidity=None):
     if temperature is None and humidity is None:
         return
-    prune_old_readings(24)  # löscht alte Werte vor jedem Insert
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     c.execute(
@@ -52,7 +51,6 @@ def store_bme_reading(sensor_id, timestamp, temperature=None, humidity=None):
 
 # --- Shelly Schreiben ---
 def store_shelly_reading(sensor_id, timestamp, apower=None, aenergy=None, temperature=None):
-    prune_old_readings(24)  # löscht alte Werte vor jedem Insert
     conn = sqlite3.connect(config.DB_FILE)
     c = conn.cursor()
     c.execute(

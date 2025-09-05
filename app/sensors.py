@@ -102,6 +102,13 @@ def shelly_loop():
         time.sleep(60)
 
 
+def prune_loop(interval_minutes=10):
+    while True:
+        try:
+            database.prune_old_readings(24)  # lösche alles älter als 24h
+        except Exception as e:
+            print(f"[ERROR] Prune Loop: {e}")
+        time.sleep(interval_minutes * 60)
 
 
 # --- Thread starten ---
@@ -110,3 +117,5 @@ def start_loop():
     t.start()
     s = threading.Thread(target=shelly_loop, daemon=True)
     s.start()
+    p = threading.Thread(target=prune_loop, daemon=True)
+    p.start()
