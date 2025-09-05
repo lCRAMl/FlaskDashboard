@@ -51,7 +51,7 @@ body {
 .bottom-buttons button {
     font-size: 2em;         /* größere Icons */
     padding: 10px 16px;
-    color: #f0f2f5;
+    color: rgba(240, 242, 245, 0.1);
     background-color: #f0f2f5;
     border: none;
     cursor: pointer;
@@ -60,6 +60,7 @@ body {
 
 .bottom-buttons button:hover {
     transform: scale(1.2);
+    color: rgba(0, 0, 0, 1);
 }
 
 .value {
