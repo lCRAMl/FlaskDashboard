@@ -1,3 +1,4 @@
 flask
 smbus2
 bme280
+numpy

@@ -4,7 +4,7 @@ import sqlite3
 import io
 import csv
 from flask import send_file
-from datetime import datetime
+from datetime import datetime, timedelta
 from . import config
 
 # --- Setup ---
@@ -73,6 +73,18 @@ def get_last_bme_readings(limit=1000):
     """, (limit,)
     )
     rows = c.fetchall()
+    conn.close()
+    return rows
+
+def last_24h_readings():
+    since = datetime.now() - timedelta(hours=24)
+    conn = sqlite3.connect(config.DB_FILE)
+    c = conn.cursor()
+    rows = c.execute(
+        "SELECT timestamp, sensor_id, temperature, humidity "
+        "FROM bme_readings WHERE timestamp >= ? ORDER BY timestamp ASC",
+        (since.strftime("%Y-%m-%d %H:%M:%S"),)
+    ).fetchall()
     conn.close()
     return rows
 

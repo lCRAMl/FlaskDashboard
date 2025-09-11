@@ -172,6 +172,9 @@ function buildTraces(data, type) {
   }).filter(Boolean);
 }
 
+const now = Date.now();
+const last24h = now - 24 * 60 * 60 * 1000;
+
 const layouts = {
   temp: {
     title: { text: 'Temperaturen', font: { size: 20 }, x: 0.5 },
@@ -268,12 +271,14 @@ async function updateData() {
       const traceIdx = traceMap[name];
       if (traceIdx === undefined) return;
 
-      if (v.temp != null) Plotly.extendTraces('tempChart', { x:[[ts]], y:[[v.temp]] }, [traceIdx]);
-      if (v.hum != null)  Plotly.extendTraces('humChart', { x:[[ts]], y:[[v.hum]] }, [traceIdx]);
+      if (v.temp != null) 
+        Plotly.extendTraces('tempChart', { x:[[ts]], y:[[v.temp]] }, [traceIdx]); 
+        Plotly.relayout('tempChart', {'xaxis.range': [new Date(last24h), new Date(now)]});
+      if (v.hum != null)  
+        Plotly.extendTraces('humChart', { x:[[ts]], y:[[v.hum]] }, [traceIdx]);
+        Plotly.relayout('humChart', {'xaxis.range': [new Date(last24h), new Date(now)]});
 
-      // Chart auf maxPoints beschränken
-      const tempData = document.getElementById('tempChart').data[traceIdx]?.x || [];
-      const humData = document.getElementById('humChart').data[traceIdx]?.x || [];
+
 
       // letzten Timestamp merken
       if (!lastTimestamp || ts > parseTimestamp(lastTimestamp)) lastTimestamp = v.timestamp;

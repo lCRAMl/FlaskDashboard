@@ -2,8 +2,15 @@
 
 from flask import Blueprint, render_template, jsonify, send_from_directory, request
 from . import database, config, systeminfo
+import numpy as np
 
 routes = Blueprint("routes", __name__)
+
+def downsample(values, target_points=500):
+    if len(values) <= target_points:
+        return values
+    idx = np.linspace(0, len(values)-1, target_points, dtype=int)
+    return [values[i] for i in idx]
 
 # --- Startseite ---
 @routes.route("/")
@@ -35,7 +42,7 @@ def data():
 # --- Verlauf für Charts ---
 @routes.route("/history")
 def history():
-    rows = database.get_last_bme_readings(config.MAX_CHART_POINTS * 10)
+    rows = rows = database.last_24h_readings()
 
     grouped = {}
     for ts, sensor, temp, hum in rows:
@@ -45,9 +52,9 @@ def history():
         grouped[sensor]["hum"].append(hum)
 
     data = {s: {
-                "timestamps": vals["timestamps"][-config.MAX_CHART_POINTS:],
-                "temp": vals["temp"][-config.MAX_CHART_POINTS:],
-                "hum": vals["hum"][-config.MAX_CHART_POINTS:],
+                "timestamps": downsample(vals["timestamps"], config.MAX_CHART_POINTS),
+                "temp": downsample(vals["temp"], config.MAX_CHART_POINTS),
+                "hum": downsample(vals["hum"], config.MAX_CHART_POINTS),
              } for s, vals in grouped.items()}
 
     if not data:
