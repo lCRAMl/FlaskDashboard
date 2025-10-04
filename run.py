@@ -1,6 +1,6 @@
 # /run.py
 
-from app import create_app, sensors, database, stream
+from app import create_app, database, sensors_i2c, stream
 import threading
 import signal
 import sys
@@ -8,8 +8,8 @@ import sys
 app = create_app()
 
 def start_sensors():
-    sensors.init_sensors()
-    sensors.start_loop()
+    sensors_i2c.init_sensors()
+    sensors_i2c.start_loop()
 
 def start_stream():
     stream.start_hls_stream()
